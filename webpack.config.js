@@ -11,6 +11,7 @@ const CompressionPlugin = require('compression-webpack-plugin')
 const { OpenBrowserPlugin } = require('./webpack-util')
 
 const PORT = process.env.PORT || 3000
+const OUTPUT_DIR = 'docs';
 
 const development = {
   mode: 'development',
@@ -36,6 +37,7 @@ const development = {
 const production = {
   mode: 'production',
   output: {
+    path: path.resolve(__dirname, OUTPUT_DIR),
     filename: '[name]-[hash].js',
   },
   plugins: [
@@ -100,7 +102,7 @@ const common = (env, argv) => {
     },
 
     plugins: [
-      new CleanWebpackPlugin(['dist']),
+      new CleanWebpackPlugin([OUTPUT_DIR]),
 
       new MiniCssExtractPlugin({
         filename:
