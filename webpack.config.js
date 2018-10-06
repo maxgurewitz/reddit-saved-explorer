@@ -61,7 +61,6 @@ const common = (env, argv) => {
           options: {
             // Shows the model history overlay
             debug: mode === 'development',
-            warn: true,
           },
         },
         {
