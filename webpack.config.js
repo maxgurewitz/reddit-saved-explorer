@@ -8,6 +8,7 @@ const WebpackBuildNotifierPlugin = require('webpack-build-notifier')
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const autoprefixer = require('autoprefixer')
 const CompressionPlugin = require('compression-webpack-plugin')
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const { OpenBrowserPlugin } = require('./webpack-util')
 
 const PORT = process.env.PORT || 3000
@@ -41,8 +42,25 @@ const production = {
     filename: '[name]-[hash].js',
   },
   plugins: [
+
+    new UglifyJsPlugin({
+      cache: true,
+      parallel: true,
+      uglifyOptions: {
+        compress: {
+          pure_funcs: ['F2','F3','F4','F5','F6','F7','F8','F9','A2','A3','A4','A5','A6','A7','A8','A9'],
+          pure_getters: true,
+          keep_fargs: false,
+          unsafe_comps: true,
+          unsafe: true,
+          passes: 3,
+        },
+      },
+    }),
+
     new OptimizeCssAssetsPlugin(),
 
+    // gzip's assets
     new CompressionPlugin({
       test: /^main-.+\.(js|css)$/,
       cache: true,
@@ -61,6 +79,7 @@ const common = (env, argv) => {
           exclude: [/elm-stuff/, /node_modules/],
           loader: 'elm-webpack-loader',
           options: {
+            optimize: mode != 'development',
             // Shows the model history overlay
             debug: mode === 'development',
           },
