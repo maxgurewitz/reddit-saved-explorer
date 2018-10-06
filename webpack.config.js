@@ -72,6 +72,9 @@ const production = {
 const common = (env, argv) => {
   const { mode } = argv
   return {
+    output: {
+      publicPath: mode === 'development' ? '/' : '/reddit-saved-explorer'
+    },
     module: {
       rules: [
         {
@@ -82,17 +85,6 @@ const common = (env, argv) => {
             optimize: mode != 'development',
             // Shows the model history overlay
             debug: mode === 'development',
-          },
-        },
-        {
-          test: /\.js$/,
-          exclude: /node_modules/,
-          include: [path.resolve(__dirname, 'public')],
-          use: {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-            },
           },
         },
         {

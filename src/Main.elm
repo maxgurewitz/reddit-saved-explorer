@@ -37,6 +37,7 @@ update msg model =
 
 
 -- VIEW
+-- should be reddit-saved-explorer/
 
 
 view : Model -> Html Msg
