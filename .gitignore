@@ -1,3 +1,13 @@
+# OSX
+.DS_Store
+
+# vim
+*.swp
+*.swo
+
+# elm
+elm-stuff
+
 # Logs
 logs
 *.log
