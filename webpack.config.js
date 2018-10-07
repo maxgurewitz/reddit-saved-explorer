@@ -73,7 +73,7 @@ const common = (env, argv) => {
   const { mode } = argv
   return {
     output: {
-      publicPath: mode === 'development' ? '/' : '/reddit-saved-explorer'
+      publicPath: mode === 'development' ? '' : '/reddit-saved-explorer'
     },
     module: {
       rules: [
