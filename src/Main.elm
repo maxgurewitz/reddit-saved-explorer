@@ -10,12 +10,13 @@ import Html.Attributes as Attr
 
 
 type alias Model =
-    {}
+    { publicPath : String
+    }
 
 
-init : () -> ( Model, Cmd Msg )
+init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( {}
+    ( { publicPath = flags.publicPath }
     , Cmd.none
     )
 
@@ -37,7 +38,6 @@ update msg model =
 
 
 -- VIEW
--- should be reddit-saved-explorer/
 
 
 view : Model -> Html Msg
@@ -45,7 +45,7 @@ view model =
     div
         []
         [ img
-            [ Attr.src "/img/elm.png"
+            [ Attr.src (model.publicPath ++ "/img/elm.png")
             , Attr.style "border"
                 "1px solid black"
             ]
@@ -63,7 +63,12 @@ subscriptions model =
     Sub.none
 
 
-main : Program () Model Msg
+type alias Flags =
+    { publicPath : String
+    }
+
+
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
