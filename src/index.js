@@ -9,11 +9,16 @@ var app = Elm.Main.init({
   flags: {
     publicPath: __webpack_public_path__,
     queryString: window.location.search,
-    redditAuthCode: cache.redditAuthCode || null,
     redditAuthState: cache.redditAuthState || null,
+    redirectUri: 'http://localhost:3000',
+    clientId: "30REJ3DOhCSiBQ"
   }
 });
 
 app.ports.cache.subscribe(function(data) {
   localStorage.setItem('cache', JSON.stringify(data));
+});
+
+app.ports.initializeReddit.subscribe(function(redditAccess) {
+  console.log('loc1', redditAccess);
 });
