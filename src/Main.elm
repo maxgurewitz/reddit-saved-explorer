@@ -1,6 +1,7 @@
 port module Main exposing (Model, Msg(..), init, main, subscriptions, update, view)
 
 import Array
+import Base64
 import Browser
 import Dict
 import Html exposing (Html, a, div, img, text)
@@ -116,35 +117,49 @@ init flags =
 
 
 type alias RedditAccess =
-    { accessToken : String
-    , refreshToken : String
+    { access_token : String
+    , refresh_token : String
     }
 
 
 decodeRedditAccess : Json.Decode.Decoder RedditAccess
 decodeRedditAccess =
     Json.Decode.map2 RedditAccess
-        (field "accessToken" Json.Decode.string)
-        (field "refreshToken" Json.Decode.string)
+        (field "access_token" Json.Decode.string)
+        (field "refresh_token" Json.Decode.string)
 
 
 accessTokenUrl =
     "https://www.reddit.com/api/v1/access_token"
 
 
+paramsToQueryPrimitives val =
+    QS.One (QS.Str val)
+
+
 requestAccessToken : String -> String -> String -> Cmd Msg
 requestAccessToken redirectUri clientId code =
     let
+        params =
+            [ ( "code", code )
+            , ( "redirect_uri", redirectUri )
+            , ( "grant_type", "authorization_code" )
+            ]
+
         body =
-            Encode.object
-                [ ( "code", Encode.string code )
-                , ( "redirect_uri", Encode.string redirectUri )
-                , ( "grant_type", Encode.string "authorization_code" )
-                ]
+            QS.serialize QS.config
+                (Dict.fromList
+                    (params |> List.map (Tuple.mapSecond paramsToQueryPrimitives))
+                )
+                |> String.dropLeft 1
+
+        authorization =
+            "Basic " ++ Base64.encode (clientId ++ ":")
     in
     HttpBuilder.post accessTokenUrl
         |> HttpBuilder.withExpectJson decodeRedditAccess
-        |> HttpBuilder.withJsonBody body
+        |> HttpBuilder.withStringBody "application/x-www-form-urlencoded" body
+        |> HttpBuilder.withHeaders [ ( "Authorization", authorization ) ]
         |> HttpBuilder.send
             (\result ->
                 result
