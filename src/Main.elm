@@ -75,7 +75,6 @@ init flags =
         getQueryParam =
             getQueryParamsStringValue queryParams
 
-        -- FIXME need to translate code to auth token and refresh toke
         maybeRedditAuthCode =
             Maybe.Extra.combine
                 [ getQueryParam "code"
@@ -212,7 +211,7 @@ buildAuthLinkQueryString model randomString =
             , ( "response_type", "code" )
             , ( "state", randomString )
             , ( "duration", "permanent" )
-            , ( "scope", "history" )
+            , ( "scope", "identity history" )
             , ( "redirect_uri", model.redirectUri )
             ]
     in
@@ -226,7 +225,8 @@ buildAuthLinkQueryString model randomString =
 -- https://github.com/not-an-aardvark/snoowrap
 -- https://www.reddit.com/dev/api/oauth#GET_user_{username}_saved
 -- https://www.oauth.com/oauth2-servers/single-page-apps/
--- Authorization: Basic client_id:
+-- https://github.com/reddit-archive/reddit/wiki/API
+-- https://github.com/not-an-aardvark/snoowrap/blob/cd2cc85fdc6354e641a458c192795e8784c0c675/src/objects/RedditUser.js#L217
 
 
 authUrl =
