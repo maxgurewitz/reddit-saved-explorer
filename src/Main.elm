@@ -23,7 +23,13 @@ import Url.Builder
 -- PORTS
 
 
-port cache : Encode.Value -> Cmd msg
+type alias CacheEntry =
+    { key : String
+    , value : Encode.Value
+    }
+
+
+port cache : CacheEntry -> Cmd msg
 
 
 port initializeReddit : RedditAccess -> Cmd msg
@@ -95,6 +101,11 @@ init flags =
                                 Nothing
                     )
 
+        initializeRedditCmd =
+            flags.redditAccess
+                |> Maybe.map initializeReddit
+                |> Maybe.withDefault Cmd.none
+
         requestAccessTokenCmd =
             maybeRedditAuthCode
                 |> Maybe.map (requestAccessToken flags.redirectUri flags.clientId)
@@ -105,10 +116,11 @@ init flags =
       , queryParams = queryParams
       , redirectUri = flags.redirectUri
       , clientId = flags.clientId
-      , isLoggedIn = False
+      , isLoggedIn = not (Maybe.Extra.isNothing flags.redditAccess)
       }
     , Cmd.batch
         [ requestAccessTokenCmd
+        , initializeRedditCmd
         , Random.generate GenerateRedditAuthState
             (Random.String.string 15 Random.Char.english)
         ]
@@ -177,6 +189,14 @@ type Msg
     | GenerateRedditAuthState String
 
 
+encodeRedditAccess : RedditAccess -> Encode.Value
+encodeRedditAccess redditAccess =
+    Encode.object
+        [ ( "access_token", Encode.string redditAccess.access_token )
+        , ( "refresh_token", Encode.string redditAccess.refresh_token )
+        ]
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -185,11 +205,19 @@ update msg model =
 
         GenerateRedditAuthState randomString ->
             ( { model | redditAuthState = Maybe.Just randomString }
-            , cache (jsonCacheValue "redditAuthState" randomString)
+            , cache { key = "redditAuthState", value = Encode.string randomString }
             )
 
         InitializeReddit redditAccess ->
-            ( model, initializeReddit redditAccess )
+            ( { model | isLoggedIn = True }
+            , Cmd.batch
+                [ initializeReddit redditAccess
+                , cache
+                    { key = "redditAccess"
+                    , value = encodeRedditAccess redditAccess
+                    }
+                ]
+            )
 
 
 jsonCacheValue : String -> String -> Encode.Value
@@ -277,6 +305,7 @@ type alias Flags =
     { publicPath : String
     , queryString : String
     , redditAuthState : Maybe String
+    , redditAccess : Maybe RedditAccess
     , clientId : String
     , redirectUri : String
     }
