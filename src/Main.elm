@@ -8,7 +8,7 @@ import Html exposing (Html, a, div, img, text)
 import Html.Attributes as Attr
 import Http
 import HttpBuilder
-import Json.Decode exposing (field)
+import Json.Decode as Decode exposing (field)
 import Json.Encode as Encode
 import Maybe.Extra
 import QS
@@ -35,6 +35,9 @@ port cache : CacheEntry -> Cmd msg
 port initializeReddit : RedditAccess -> Cmd msg
 
 
+port saved : (Encode.Value -> msg) -> Sub msg
+
+
 
 -- MODEL
 
@@ -42,10 +45,35 @@ port initializeReddit : RedditAccess -> Cmd msg
 type alias Model =
     { publicPath : String
     , redditAuthState : Maybe String
+    , saved : List Link
     , queryParams : Dict.Dict String QS.OneOrMany
     , isLoggedIn : Bool
     , redirectUri : String
     , clientId : String
+    }
+
+
+
+{-
+
+   sample values:
+
+      author: "Unknownrealm"
+      created_utc: 1539113941
+      permalink: "/r/MMA/comments/9msb4h/khabib_pre_and_post_fight_with_past_opponents/"
+      subreddit: "MMA"
+      thumbnail: "https://a.thumbs.redditmedia.com/_XaaOS8cYjbkIaMzVmgE9AyZxekgQAwcCiqSm83pz18.jpg"
+
+-}
+
+
+type alias Link =
+    { author : String
+    , created_utc : Int
+    , permalink : String
+    , subreddit : String
+    , thumbnail : String
+    , title : String
     }
 
 
@@ -114,6 +142,7 @@ init flags =
     ( { publicPath = flags.publicPath
       , redditAuthState = Maybe.Nothing
       , queryParams = queryParams
+      , saved = []
       , redirectUri = flags.redirectUri
       , clientId = flags.clientId
       , isLoggedIn = not (Maybe.Extra.isNothing flags.redditAccess)
@@ -133,11 +162,11 @@ type alias RedditAccess =
     }
 
 
-decodeRedditAccess : Json.Decode.Decoder RedditAccess
+decodeRedditAccess : Decode.Decoder RedditAccess
 decodeRedditAccess =
-    Json.Decode.map2 RedditAccess
-        (field "access_token" Json.Decode.string)
-        (field "refresh_token" Json.Decode.string)
+    Decode.map2 RedditAccess
+        (field "access_token" Decode.string)
+        (field "refresh_token" Decode.string)
 
 
 accessTokenUrl =
@@ -185,6 +214,7 @@ requestAccessToken redirectUri clientId code =
 
 type Msg
     = NoOp
+    | ReceiveSaved (List Link)
     | InitializeReddit RedditAccess
     | GenerateRedditAuthState String
 
@@ -202,6 +232,9 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
+
+        ReceiveSaved savedItems ->
+            ( { model | saved = savedItems }, Cmd.none )
 
         GenerateRedditAuthState randomString ->
             ( { model | redditAuthState = Maybe.Just randomString }
@@ -261,22 +294,39 @@ authUrl =
     "https://www.reddit.com/api/v1/authorize"
 
 
+authLink model authState =
+    a
+        [ Attr.href (authUrl ++ buildAuthLinkQueryString model authState) ]
+        [ text "authorize site to read reddit history" ]
+
+
+savedItem : Model -> Link -> Html Msg
+savedItem model item =
+    div []
+        [ a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
+            [ text item.title ]
+        ]
+
+
+savedList : Model -> Html Msg
+savedList model =
+    div []
+        (List.map
+            (savedItem model)
+            model.saved
+        )
+
+
 view : Model -> Html Msg
 view model =
     let
-        authLink =
+        maybeAuthLink =
             if model.isLoggedIn then
-                text ""
+                savedList model
 
             else
                 model.redditAuthState
-                    |> Maybe.map (buildAuthLinkQueryString model)
-                    |> Maybe.map
-                        (\queryParams ->
-                            a
-                                [ Attr.href (authUrl ++ queryParams) ]
-                                [ text "authorize site to read reddit history" ]
-                        )
+                    |> Maybe.map (authLink model)
                     |> Maybe.withDefault (text "")
     in
     div
@@ -288,7 +338,7 @@ view model =
             ]
             []
         , text "Hello world"
-        , authLink
+        , maybeAuthLink
         ]
 
 
@@ -296,9 +346,33 @@ view model =
 -- SUBSCRIPTIONS
 
 
+linkDecoder =
+    Decode.map6 Link
+        (field "author" Decode.string)
+        (field "created_utc" Decode.int)
+        (field "permalink" Decode.string)
+        (field "subreddit" Decode.string)
+        (field "thumbnail" Decode.string)
+        (field "title" Decode.string)
+
+
+decodeSaved : Encode.Value -> List Link
+decodeSaved value =
+    Decode.decodeValue (Decode.list linkDecoder) value
+        |> Result.mapError
+            (\err ->
+                let
+                    _ =
+                        Debug.log "Failed to parse saved: " err
+                in
+                err
+            )
+        |> Result.withDefault []
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    saved (decodeSaved >> ReceiveSaved)
 
 
 type alias Flags =

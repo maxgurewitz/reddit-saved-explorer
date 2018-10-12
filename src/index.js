@@ -38,6 +38,20 @@ app.ports.initializeReddit.subscribe(function(redditAccess) {
   });
 
   redditClient.getMe().getSavedContent().then(function (content) {
+    var saved = [];
+
+    content.forEach(function (item) {
+      saved.push({
+        author: item.author.name,
+        created_utc: item.created_utc,
+        permalink: item.permalink,
+        subreddit: item.subreddit.display_name,
+        thumbnail: item.thumbnail,
+        title: item.title,
+      });
+    });
+
     console.log('loc1', content);
+    app.ports.saved.send(saved);
   });
 });
