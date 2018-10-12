@@ -72,7 +72,7 @@ type alias Link =
     , created_utc : Int
     , permalink : String
     , subreddit : String
-    , thumbnail : String
+    , thumbnail : Maybe String
     , title : String
     }
 
@@ -352,7 +352,7 @@ linkDecoder =
         (field "created_utc" Decode.int)
         (field "permalink" Decode.string)
         (field "subreddit" Decode.string)
-        (field "thumbnail" Decode.string)
+        (field "thumbnail" (Decode.nullable Decode.string))
         (field "title" Decode.string)
 
 

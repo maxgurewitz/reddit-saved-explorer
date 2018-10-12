@@ -46,12 +46,11 @@ app.ports.initializeReddit.subscribe(function(redditAccess) {
         created_utc: item.created_utc,
         permalink: item.permalink,
         subreddit: item.subreddit.display_name,
-        thumbnail: item.thumbnail,
-        title: item.title,
+        thumbnail: item.thumbnail || null,
+        title: item.title || item.link_title,
       });
     });
 
-    console.log('loc1', content);
     app.ports.saved.send(saved);
   });
 });
