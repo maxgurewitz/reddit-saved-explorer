@@ -25,7 +25,7 @@ const app = Elm.Main.init({
 
 let redditClient, me;
 
-app.ports.cache.subscribe(function(data) {
+app.ports.cache.subscribe(data => {
   localStorage.setItem(data.key, JSON.stringify(data.value));
 });
 

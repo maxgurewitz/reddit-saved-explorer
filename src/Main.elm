@@ -363,7 +363,10 @@ authLinkView model authState =
 savedItemView : Model -> Link -> Html Msg
 savedItemView model item =
     div []
-        [ a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
+        [ item.thumbnail
+            |> Maybe.map (\src -> img [ Attr.src src ] [])
+            |> Maybe.withDefault (text "")
+        , a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
             [ text item.title ]
         ]
 
