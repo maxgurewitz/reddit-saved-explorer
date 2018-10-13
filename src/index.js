@@ -23,27 +23,24 @@ var app = Elm.Main.init({
   }
 });
 
-var redditClient;
+var redditClient, me;
 
 app.ports.cache.subscribe(function(data) {
   localStorage.setItem(data.key, JSON.stringify(data.value));
 });
 
-app.ports.initializeReddit.subscribe(function(redditAccess) {
-  redditClient = new Snoowrap({
-    userAgent: 'web:saved-explorer:' + __webpack_hash__ + ' (by /u/maxgurewitz)',
-    clientId: clientId,
-    refreshToken: redditAccess.refresh_token,
-    accessToken: redditAccess.access_token
-  });
+function getSavedContent(maybeParams) {
+  var params = maybeParams || {};
+  params.limit = 100;
 
-  redditClient.getMe().getSavedContent().then(function (content) {
+  me.getSavedContent(params).then(function (content) {
     var saved = [];
 
     content.forEach(function (item) {
       saved.push({
         author: item.author.name,
         created_utc: item.created_utc,
+        name: item.name,
         permalink: item.permalink,
         subreddit: item.subreddit.display_name,
         thumbnail: item.thumbnail || null,
@@ -53,4 +50,20 @@ app.ports.initializeReddit.subscribe(function(redditAccess) {
 
     app.ports.saved.send(saved);
   });
+}
+
+app.ports.pageReddit.subscribe(function(data) {
+  getSavedContent(data.params);
+});
+
+app.ports.initializeReddit.subscribe(function(request) {
+  redditClient = new Snoowrap({
+    userAgent: 'web:saved-explorer:' + __webpack_hash__ + ' (by /u/maxgurewitz)',
+    clientId: clientId,
+    refreshToken: request.access.refresh_token,
+    accessToken: request.access.access_token
+  });
+
+  me = redditClient.getMe();
+  getSavedContent();
 });

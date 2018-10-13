@@ -10,6 +10,7 @@ import Http
 import HttpBuilder
 import Json.Decode as Decode exposing (field)
 import Json.Encode as Encode
+import List.Extra
 import Maybe.Extra
 import QS
 import Random
@@ -32,7 +33,24 @@ type alias CacheEntry =
 port cache : CacheEntry -> Cmd msg
 
 
-port initializeReddit : RedditAccess -> Cmd msg
+type alias PageParams =
+    { after : String
+    }
+
+
+type alias PageRequest =
+    { params : PageParams
+    }
+
+
+type alias InitializeRequest =
+    { access : RedditAccess }
+
+
+port initializeReddit : InitializeRequest -> Cmd msg
+
+
+port pageReddit : PageRequest -> Cmd msg
 
 
 port saved : (Encode.Value -> msg) -> Sub msg
@@ -70,6 +88,7 @@ type alias Model =
 type alias Link =
     { author : String
     , created_utc : Int
+    , name : String
     , permalink : String
     , subreddit : String
     , thumbnail : Maybe String
@@ -131,7 +150,11 @@ init flags =
 
         initializeRedditCmd =
             flags.redditAccess
-                |> Maybe.map initializeReddit
+                |> Maybe.map
+                    (\redditAccess ->
+                        initializeReddit
+                            { access = redditAccess }
+                    )
                 |> Maybe.withDefault Cmd.none
 
         requestAccessTokenCmd =
@@ -234,7 +257,22 @@ update msg model =
             ( model, Cmd.none )
 
         ReceiveSaved savedItems ->
-            ( { model | saved = savedItems }, Cmd.none )
+            let
+                pageCmd =
+                    List.Extra.last savedItems
+                        |> Maybe.map
+                            (\lastItem ->
+                                pageReddit
+                                    { params = { after = lastItem.name }
+                                    }
+                            )
+                        |> Maybe.withDefault Cmd.none
+            in
+            ( { model
+                | saved = List.concat [ model.saved, savedItems ]
+              }
+            , pageCmd
+            )
 
         GenerateRedditAuthState randomString ->
             ( { model | redditAuthState = Maybe.Just randomString }
@@ -244,7 +282,8 @@ update msg model =
         InitializeReddit redditAccess ->
             ( { model | isLoggedIn = True }
             , Cmd.batch
-                [ initializeReddit redditAccess
+                [ initializeReddit
+                    { access = redditAccess }
                 , cache
                     { key = "redditAccess"
                     , value = encodeRedditAccess redditAccess
@@ -347,9 +386,10 @@ view model =
 
 
 linkDecoder =
-    Decode.map6 Link
+    Decode.map7 Link
         (field "author" Decode.string)
         (field "created_utc" Decode.int)
+        (field "name" Decode.string)
         (field "permalink" Decode.string)
         (field "subreddit" Decode.string)
         (field "thumbnail" (Decode.nullable Decode.string))

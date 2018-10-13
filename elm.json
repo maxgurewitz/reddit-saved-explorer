@@ -14,6 +14,7 @@
             "elm/json": "1.0.0",
             "elm/random": "1.0.0",
             "elm/url": "1.0.0",
+            "elm-community/list-extra": "8.1.0",
             "elm-community/maybe-extra": "5.0.0",
             "elm-community/random-extra": "3.0.0",
             "lukewestby/elm-http-builder": "6.0.0",
