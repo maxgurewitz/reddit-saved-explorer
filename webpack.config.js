@@ -43,6 +43,7 @@ const production = {
     filename: '[name]-[hash].js',
   },
   plugins: [
+    new webpack.ExtendedAPIPlugin(),
 
     new UglifyJsPlugin({
       cache: true,
