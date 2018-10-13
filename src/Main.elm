@@ -334,12 +334,19 @@ buildAuthLinkQueryString model randomString =
 
 
 
--- https://github.com/reddit-archive/reddit/wiki/OAuth2
--- https://github.com/not-an-aardvark/snoowrap
--- https://www.reddit.com/dev/api/oauth#GET_user_{username}_saved
--- https://www.oauth.com/oauth2-servers/single-page-apps/
--- https://github.com/reddit-archive/reddit/wiki/API
--- https://github.com/not-an-aardvark/snoowrap/blob/cd2cc85fdc6354e641a458c192795e8784c0c675/src/objects/RedditUser.js#L217
+{-
+
+   resources:
+
+     https://ssl.reddit.com/prefs/apps/
+     https://github.com/reddit-archive/reddit/wiki/OAuth2
+     https://github.com/not-an-aardvark/snoowrap
+     https://www.reddit.com/dev/api/oauth#GET_user_{username}_saved
+     https://www.oauth.com/oauth2-servers/single-page-apps/
+     https://github.com/reddit-archive/reddit/wiki/API
+     https://github.com/not-an-aardvark/snoowrap/blob/cd2cc85fdc6354e641a458c192795e8784c0c675/src/objects/RedditUser.js#L217
+
+-}
 
 
 authUrl =

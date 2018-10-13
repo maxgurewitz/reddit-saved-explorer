@@ -4,13 +4,13 @@ var Snoowrap = require('snoowrap');
 var Elm = require('./Main.elm').Elm;
 
 var cache = JSON.parse(localStorage.getItem('cache') || '{}' );
-var clientId = "30REJ3DOhCSiBQ";
 
 function getStored(key) {
   var stored = localStorage.getItem(key);
   return stored === null ? null : JSON.parse(stored);
 }
 
+// https://maxgurewitz.github.io/reddit-saved-explorer/
 var app = Elm.Main.init({
   node: document.getElementById('main'),
   flags: {
@@ -18,8 +18,8 @@ var app = Elm.Main.init({
     queryString: window.location.search,
     redditAuthState: getStored('redditAuthState'),
     redditAccess: getStored('redditAccess'),
-    redirectUri: 'http://localhost:3000',
-    clientId: clientId
+    redirectUri: process.env.redirectUri,
+    clientId: process.env.clientId
   }
 });
 
@@ -59,7 +59,7 @@ app.ports.pageReddit.subscribe(function(data) {
 app.ports.initializeReddit.subscribe(function(request) {
   redditClient = new Snoowrap({
     userAgent: 'web:saved-explorer:' + __webpack_hash__ + ' (by /u/maxgurewitz)',
-    clientId: clientId,
+    clientId: process.env.clientId,
     refreshToken: request.access.refresh_token,
     accessToken: request.access.access_token
   });

@@ -1,4 +1,5 @@
 const path = require('path')
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const merge = require('webpack-merge')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
@@ -113,6 +114,16 @@ const common = (env, argv) => {
     },
 
     plugins: [
+      new webpack.EnvironmentPlugin({
+        clientId: mode === 'development' ?
+          '30REJ3DOhCSiBQ' :
+          'O0SO1Y-rWRd3hQ',
+
+        redirectUri: mode === 'development' ?
+          'http://localhost:3000' :
+          'https://maxgurewitz.github.io/reddit-saved-explorer/'
+      }),
+
       new CleanWebpackPlugin([OUTPUT_DIR]),
 
       new MiniCssExtractPlugin({
