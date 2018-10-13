@@ -4,8 +4,9 @@ import Array
 import Base64
 import Browser
 import Dict
-import Html exposing (Html, a, div, img, text)
+import Html exposing (Html, a, div, img, input, label, text)
 import Html.Attributes as Attr
+import Html.Events exposing (onClick)
 import Http
 import HttpBuilder
 import Json.Decode as Decode exposing (field)
@@ -16,6 +17,8 @@ import QS
 import Random
 import Random.Char
 import Random.String
+import Set exposing (Set)
+import Set.Extra
 import Url exposing (Url)
 import Url.Builder
 
@@ -68,6 +71,7 @@ type alias Model =
     , isLoggedIn : Bool
     , redirectUri : String
     , clientId : String
+    , selectedSubreddits : Set String
     }
 
 
@@ -169,6 +173,7 @@ init flags =
       , redirectUri = flags.redirectUri
       , clientId = flags.clientId
       , isLoggedIn = not (Maybe.Extra.isNothing flags.redditAccess)
+      , selectedSubreddits = Set.empty
       }
     , Cmd.batch
         [ requestAccessTokenCmd
@@ -240,6 +245,7 @@ type Msg
     | ReceiveSaved (List Link)
     | InitializeReddit RedditAccess
     | GenerateRedditAuthState String
+    | ToggleSelectedSubReddit String
 
 
 encodeRedditAccess : RedditAccess -> Encode.Value
@@ -255,6 +261,13 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
+
+        ToggleSelectedSubReddit toggled ->
+            ( { model
+                | selectedSubreddits = Set.Extra.toggle toggled model.selectedSubreddits
+              }
+            , Cmd.none
+            )
 
         ReceiveSaved savedItems ->
             let
@@ -333,27 +346,61 @@ authUrl =
     "https://www.reddit.com/api/v1/authorize"
 
 
-authLink model authState =
+authLinkView : Model -> String -> Html Msg
+authLinkView model authState =
     a
         [ Attr.href (authUrl ++ buildAuthLinkQueryString model authState) ]
         [ text "authorize site to read reddit history" ]
 
 
-savedItem : Model -> Link -> Html Msg
-savedItem model item =
+savedItemView : Model -> Link -> Html Msg
+savedItemView model item =
     div []
         [ a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
             [ text item.title ]
         ]
 
 
-savedList : Model -> Html Msg
-savedList model =
-    div []
-        (List.map
-            (savedItem model)
+subredditFilter : Model -> String -> Html Msg
+subredditFilter model subreddit =
+    label []
+        [ input
+            [ Attr.type_ "checkbox"
+            , onClick (ToggleSelectedSubReddit subreddit)
+            ]
+            []
+        , text subreddit
+        ]
+
+
+loggedInView : Model -> Html Msg
+loggedInView model =
+    let
+        subreddits =
             model.saved
-        )
+                |> List.map .subreddit
+                |> List.Extra.unique
+
+        displayedSaved =
+            if Set.isEmpty model.selectedSubreddits then
+                model.saved
+
+            else
+                model.saved
+                    |> List.filter
+                        (\savedItem ->
+                            Set.member savedItem.subreddit model.selectedSubreddits
+                        )
+    in
+    div []
+        [ div []
+            (List.map (subredditFilter model) subreddits)
+        , div []
+            (List.map
+                (savedItemView model)
+                displayedSaved
+            )
+        ]
 
 
 view : Model -> Html Msg
@@ -361,11 +408,11 @@ view model =
     let
         maybeAuthLink =
             if model.isLoggedIn then
-                savedList model
+                loggedInView model
 
             else
                 model.redditAuthState
-                    |> Maybe.map (authLink model)
+                    |> Maybe.map (authLinkView model)
                     |> Maybe.withDefault (text "")
     in
     div

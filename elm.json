@@ -19,6 +19,7 @@
             "elm-community/random-extra": "3.0.0",
             "lukewestby/elm-http-builder": "6.0.0",
             "sporto/qs": "1.0.1",
+            "stoeffel/set-extra": "1.2.3",
             "truqu/elm-base64": "2.0.4"
         },
         "indirect": {
