@@ -453,14 +453,6 @@ linkDecoder =
 decodeSaved : Encode.Value -> List Link
 decodeSaved value =
     Decode.decodeValue (Decode.list linkDecoder) value
-        |> Result.mapError
-            (\err ->
-                let
-                    _ =
-                        Debug.log "Failed to parse saved: " err
-                in
-                err
-            )
         |> Result.withDefault []
 
 

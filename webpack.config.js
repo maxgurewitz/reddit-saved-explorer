@@ -79,6 +79,16 @@ const common = (env, argv) => {
     module: {
       rules: [
         {
+          test: /\.js$/,
+          exclude: /node_modules\/(?!snoowrap)/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env']
+            }
+          }
+        },
+        {
           test: /\.elm$/,
           exclude: [/elm-stuff/, /node_modules/],
           loader: 'elm-webpack-loader',
