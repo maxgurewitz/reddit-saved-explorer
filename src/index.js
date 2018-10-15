@@ -46,9 +46,12 @@ function getSavedContent(maybeParams) {
         subreddit: item.subreddit.display_name,
         thumbnail: item.thumbnail || null,
         title: item.title || item.link_title,
+        type: __proto__.constructor.name
       });
     });
 
+    debugger;
+    console.log('loc1', content);
     app.ports.saved.send(saved);
   });
 }

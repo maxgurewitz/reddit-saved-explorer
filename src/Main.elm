@@ -66,7 +66,7 @@ port saved : (Encode.Value -> msg) -> Sub msg
 type alias Model =
     { publicPath : String
     , redditAuthState : Maybe String
-    , saved : List Link
+    , saved : List SavedItem
     , queryParams : Dict.Dict String QS.OneOrMany
     , isLoggedIn : Bool
     , redirectUri : String
@@ -89,7 +89,7 @@ type alias Model =
 -}
 
 
-type alias Link =
+type alias SavedItem =
     { author : String
     , created_utc : Int
     , name : String
@@ -242,7 +242,7 @@ requestAccessToken redirectUri clientId code =
 
 type Msg
     = NoOp
-    | ReceiveSaved (List Link)
+    | ReceiveSaved (List SavedItem)
     | InitializeReddit RedditAccess
     | GenerateRedditAuthState String
     | ToggleSelectedSubReddit String
@@ -360,7 +360,7 @@ authLinkView model authState =
         [ text "authorize site to read reddit history" ]
 
 
-savedItemView : Model -> Link -> Html Msg
+savedItemView : Model -> SavedItem -> Html Msg
 savedItemView model item =
     div []
         [ item.thumbnail
@@ -442,8 +442,8 @@ view model =
 -- SUBSCRIPTIONS
 
 
-linkDecoder =
-    Decode.map7 Link
+savedItemDecoder =
+    Decode.map7 SavedItem
         (field "author" Decode.string)
         (field "created_utc" Decode.int)
         (field "name" Decode.string)
@@ -453,9 +453,9 @@ linkDecoder =
         (field "title" Decode.string)
 
 
-decodeSaved : Encode.Value -> List Link
+decodeSaved : Encode.Value -> List SavedItem
 decodeSaved value =
-    Decode.decodeValue (Decode.list linkDecoder) value
+    Decode.decodeValue (Decode.list savedItemDecoder) value
         |> Result.withDefault []
 
 
