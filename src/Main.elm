@@ -89,17 +89,6 @@ type alias Model =
 -}
 
 
-type alias SavedItem =
-    { author : String
-    , created_utc : Int
-    , name : String
-    , permalink : String
-    , subreddit : String
-    , thumbnail : Maybe String
-    , title : String
-    }
-
-
 getQueryParamStringValue : QS.OneOrMany -> Maybe String
 getQueryParamStringValue oneOrMany =
     case oneOrMany of
@@ -364,6 +353,14 @@ savedItemView : Model -> SavedItem -> Html Msg
 savedItemView model item =
     div []
         [ item.thumbnail
+            |> Maybe.andThen
+                (\src ->
+                    if item.over18 then
+                        Nothing
+
+                    else
+                        Just src
+                )
             |> Maybe.map (\src -> img [ Attr.src src ] [])
             |> Maybe.withDefault (text "")
         , a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
@@ -442,11 +439,24 @@ view model =
 -- SUBSCRIPTIONS
 
 
+type alias SavedItem =
+    { author : String
+    , createdUtc : Int
+    , name : String
+    , over18 : Bool
+    , permalink : String
+    , subreddit : String
+    , thumbnail : Maybe String
+    , title : String
+    }
+
+
 savedItemDecoder =
-    Decode.map7 SavedItem
+    Decode.map8 SavedItem
         (field "author" Decode.string)
-        (field "created_utc" Decode.int)
+        (field "createdUtc" Decode.int)
         (field "name" Decode.string)
+        (field "over18" Decode.bool)
         (field "permalink" Decode.string)
         (field "subreddit" Decode.string)
         (field "thumbnail" (Decode.nullable Decode.string))
@@ -456,6 +466,14 @@ savedItemDecoder =
 decodeSaved : Encode.Value -> List SavedItem
 decodeSaved value =
     Decode.decodeValue (Decode.list savedItemDecoder) value
+        |> Result.mapError
+            (\e ->
+                let
+                    _ =
+                        Debug.log "e" e
+                in
+                e
+            )
         |> Result.withDefault []
 
 

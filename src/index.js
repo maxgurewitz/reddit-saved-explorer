@@ -40,18 +40,17 @@ function getSavedContent(maybeParams) {
     content.forEach(item => {
       saved.push({
         author: item.author.name,
-        created_utc: item.created_utc,
+        createdUtc: item.created_utc,
         name: item.name,
+        over18: item.over_18,
         permalink: item.permalink,
         subreddit: item.subreddit.display_name,
         thumbnail: item.thumbnail || null,
         title: item.title || item.link_title,
-        type: __proto__.constructor.name
+        type: __proto__.constructor.name,
       });
     });
 
-    debugger;
-    console.log('loc1', content);
     app.ports.saved.send(saved);
   });
 }
