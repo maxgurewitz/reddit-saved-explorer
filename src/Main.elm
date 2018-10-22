@@ -420,6 +420,27 @@ dropdownItemName filter =
             "Include NSFW."
 
 
+isSavedVisible : Model -> SavedItem -> Bool
+isSavedVisible model savedItem =
+    let
+        ageAppropriate =
+            case model.over18Selected of
+                OnlyOver18 ->
+                    savedItem.over18
+
+                OnlyUnder18 ->
+                    not savedItem.over18
+
+                IncludeOver18 ->
+                    True
+
+        inSelectedSubreddit =
+            Set.isEmpty model.selectedSubreddits
+                || Set.member savedItem.subreddit model.selectedSubreddits
+    in
+    ageAppropriate && inSelectedSubreddit
+
+
 loggedInView : Model -> Html Msg
 loggedInView model =
     let
@@ -429,15 +450,7 @@ loggedInView model =
                 |> List.Extra.unique
 
         displayedSaved =
-            if Set.isEmpty model.selectedSubreddits then
-                model.saved
-
-            else
-                model.saved
-                    |> List.filter
-                        (\savedItem ->
-                            Set.member savedItem.subreddit model.selectedSubreddits
-                        )
+            List.filter (isSavedVisible model) model.saved
     in
     div []
         [ div []
