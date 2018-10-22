@@ -4,6 +4,7 @@ import Array
 import Base64
 import Browser
 import Dict
+import Dropdown exposing (Dropdown, Event(..))
 import Html exposing (Html, a, div, img, input, label, text)
 import Html.Attributes as Attr
 import Html.Events exposing (onClick)
@@ -72,7 +73,15 @@ type alias Model =
     , redirectUri : String
     , clientId : String
     , selectedSubreddits : Set String
+    , over18Dropdown : Dropdown
+    , over18Selected : Over18Filter
     }
+
+
+type Over18Filter
+    = OnlyOver18
+    | OnlyUnder18
+    | IncludeOver18
 
 
 
@@ -163,6 +172,8 @@ init flags =
       , clientId = flags.clientId
       , isLoggedIn = not (Maybe.Extra.isNothing flags.redditAccess)
       , selectedSubreddits = Set.empty
+      , over18Dropdown = Dropdown.init
+      , over18Selected = OnlyUnder18
       }
     , Cmd.batch
         [ requestAccessTokenCmd
@@ -231,6 +242,7 @@ requestAccessToken redirectUri clientId code =
 
 type Msg
     = NoOp
+    | Over18Selected (Dropdown.Msg Over18Filter)
     | ReceiveSaved (List SavedItem)
     | InitializeReddit RedditAccess
     | GenerateRedditAuthState String
@@ -250,6 +262,24 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
+
+        Over18Selected dropdownMsg ->
+            let
+                ( updatedDropdown, event ) =
+                    Dropdown.update dropdownMsg model.over18Dropdown
+
+                updatedModel =
+                    case event of
+                        ItemSelected over18Selected ->
+                            { model
+                                | over18Dropdown = updatedDropdown
+                                , over18Selected = over18Selected
+                            }
+
+                        _ ->
+                            { model | over18Dropdown = updatedDropdown }
+            in
+            ( updatedModel, Cmd.none )
 
         ToggleSelectedSubReddit toggled ->
             ( { model
@@ -352,15 +382,12 @@ authLinkView model authState =
 savedItemView : Model -> SavedItem -> Html Msg
 savedItemView model item =
     div []
-        [ item.thumbnail
-            |> Maybe.andThen
-                (\src ->
-                    if item.over18 then
-                        Nothing
+        [ (if item.over18 then
+            Nothing
 
-                    else
-                        Just src
-                )
+           else
+            item.thumbnail
+          )
             |> Maybe.map (\src -> img [ Attr.src src ] [])
             |> Maybe.withDefault (text "")
         , a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
@@ -378,6 +405,19 @@ subredditFilter model subreddit =
             []
         , text subreddit
         ]
+
+
+dropdownItemName : Over18Filter -> String
+dropdownItemName filter =
+    case filter of
+        OnlyOver18 ->
+            "Only NSFW."
+
+        OnlyUnder18 ->
+            "Safe for work."
+
+        IncludeOver18 ->
+            "Include NSFW."
 
 
 loggedInView : Model -> Html Msg
@@ -401,6 +441,16 @@ loggedInView model =
     in
     div []
         [ div []
+            [ Html.map
+                Over18Selected
+                (Dropdown.view
+                    [ OnlyUnder18, IncludeOver18, OnlyOver18 ]
+                    (Just model.over18Selected)
+                    dropdownItemName
+                    model.over18Dropdown
+                )
+            ]
+        , div []
             (List.map (subredditFilter model) subreddits)
         , div []
             (List.map
@@ -413,7 +463,7 @@ loggedInView model =
 view : Model -> Html Msg
 view model =
     let
-        maybeAuthLink =
+        authView =
             if model.isLoggedIn then
                 loggedInView model
 
@@ -431,7 +481,7 @@ view model =
             ]
             []
         , text "Hello world"
-        , maybeAuthLink
+        , authView
         ]
 
 
@@ -466,14 +516,6 @@ savedItemDecoder =
 decodeSaved : Encode.Value -> List SavedItem
 decodeSaved value =
     Decode.decodeValue (Decode.list savedItemDecoder) value
-        |> Result.mapError
-            (\e ->
-                let
-                    _ =
-                        Debug.log "e" e
-                in
-                e
-            )
         |> Result.withDefault []
 
 

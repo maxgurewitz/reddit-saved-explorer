@@ -100,19 +100,29 @@ const common = (env, argv) => {
           },
         },
         {
-          test: /\.(woff|woff2|eot|ttf|otf)$/,
-          include: [path.resolve(__dirname, 'public')],
+          test: /\.(woff|woff2|eot|ttf|otf|svg)$/,
+          include: [
+            path.resolve(__dirname, 'public'),
+            path.resolve(__dirname, 'node_modules', 'bootstrap-sass', 'assets', 'fonts', 'bootstrap')
+          ],
           use: ['file-loader'],
         },
         {
           test: /\.(css|scss|sass)$/,
-          include: [path.resolve(__dirname, 'src')],
+          include: [
+            path.resolve(__dirname, 'src'),
+          ],
           use: [
             mode === 'production'
               ? MiniCssExtractPlugin.loader
               : 'style-loader',
             'css-loader',
-            'sass-loader',
+            {
+              loader: 'sass-loader',
+              options: {
+                includePaths: []
+              }
+            },
             {
               loader: 'postcss-loader',
               options: {

@@ -17,6 +17,7 @@
             "elm-community/list-extra": "8.1.0",
             "elm-community/maybe-extra": "5.0.0",
             "elm-community/random-extra": "3.0.0",
+            "fedragon/elm-typed-dropdown": "2.0.2",
             "lukewestby/elm-http-builder": "6.0.0",
             "sporto/qs": "1.0.1",
             "stoeffel/set-extra": "1.2.3",
