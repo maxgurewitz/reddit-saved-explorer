@@ -42,29 +42,61 @@ const production = {
     path: path.resolve(__dirname, OUTPUT_DIR),
     filename: '[name]-[hash].js',
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        default: false,
+        elm: {
+          test: /[\\/]Main.elm/,
+          name: 'elm',
+          chunks: 'all'
+        }
+      }
+    },
+
+    // https://github.com/elm-community/elm-webpack-loader/issues/140
+    // https://github.com/mishoo/UglifyJS2/issues/2438
+    minimizer: [
+      new UglifyJsPlugin({ exclude: 'elm', sourceMap: true, parallel: true }),
+      new UglifyJsPlugin({
+          include: 'elm',
+          parallel: true,
+          sourceMap: false,
+          uglifyOptions: {
+              compress: {
+                  pure_funcs: [
+                      'F2',
+                      'F3',
+                      'F4',
+                      'F5',
+                      'F6',
+                      'F7',
+                      'F8',
+                      'F9',
+                      'A2',
+                      'A3',
+                      'A4',
+                      'A5',
+                      'A6',
+                      'A7',
+                      'A8',
+                      'A9'
+                  ],
+                  pure_getters: true,
+                  keep_fargs: false,
+                  unsafe_comps: true,
+                  unsafe: true
+              }
+          }
+      }),
+    ]
+  },
   plugins: [
     new webpack.ExtendedAPIPlugin(),
-
-    new UglifyJsPlugin({
-      cache: true,
-      parallel: true,
-      uglifyOptions: {
-        compress: {
-          pure_funcs: ['F2','F3','F4','F5','F6','F7','F8','F9','A2','A3','A4','A5','A6','A7','A8','A9'],
-          pure_getters: true,
-          keep_fargs: false,
-          unsafe_comps: true,
-          unsafe: true,
-          passes: 3,
-        },
-      },
-    }),
-
     new OptimizeCssAssetsPlugin(),
-
     // gzip's assets
     new CompressionPlugin({
-      test: /^main-.+\.(js|css)$/,
+      test: /^(elm|main)-.+\.(js|css)$/,
       cache: true,
       threshold: 1024,
     }),
@@ -171,9 +203,9 @@ const common = (env, argv) => {
 }
 
 module.exports = (env, argv) => {
-  const { mode } = argv
+  const { mode } = argv;
   return merge(
     common(env, argv),
     mode === 'development' ? development : production
-  )
+  );
 }
