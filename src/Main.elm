@@ -5,7 +5,9 @@ import Base64
 import Browser
 import Dict
 import Dropdown exposing (Dropdown, Event(..))
-import Html exposing (Html, a, div, img, input, label, text)
+import Element exposing (Element, alignRight, centerY, column, el, fill, image, link, padding, row, spacing, text, width)
+import Element.Input exposing (checkbox, labelLeft)
+import Html exposing (Html, a, div, img, input, label)
 import Html.Attributes as Attr
 import Html.Events exposing (onClick)
 import Http
@@ -372,39 +374,51 @@ authUrl =
     "https://www.reddit.com/api/v1/authorize"
 
 
-authLinkView : Model -> String -> Html Msg
+authLinkView : Model -> String -> Element Msg
 authLinkView model authState =
-    a
-        [ Attr.href (authUrl ++ buildAuthLinkQueryString model authState) ]
-        [ text "authorize site to read reddit history" ]
+    link []
+        { url =
+            authUrl ++ buildAuthLinkQueryString model authState
+        , label = text "authorize site to read reddit history"
+        }
 
 
-savedItemView : Model -> SavedItem -> Html Msg
+savedItemView : Model -> SavedItem -> Element Msg
 savedItemView model item =
-    div []
+    row []
         [ (if item.over18 then
             Nothing
 
            else
             item.thumbnail
           )
-            |> Maybe.map (\src -> img [ Attr.src src ] [])
+            |> Maybe.map (\src -> image [] { src = src, description = item.title })
             |> Maybe.withDefault (text "")
-        , a [ Attr.href ("https://reddit.com" ++ item.permalink) ]
-            [ text item.title ]
+        , link [] { url = "https://reddit.com" ++ item.permalink, label = text item.title }
         ]
 
 
-subredditFilter : Model -> String -> Html Msg
+subredditFilterIcon : Bool -> Element Msg
+subredditFilterIcon isSelected =
+    let
+        iconClass =
+            if isSelected then
+                "glyphicon glyphicon-check"
+
+            else
+                "glyphicon glyphicon-unchecked"
+    in
+    el [ Element.htmlAttribute (Attr.class iconClass) ] (text "")
+
+
+subredditFilter : Model -> String -> Element Msg
 subredditFilter model subreddit =
-    label []
-        [ input
-            [ Attr.type_ "checkbox"
-            , onClick (ToggleSelectedSubReddit subreddit)
-            ]
-            []
-        , text subreddit
-        ]
+    checkbox []
+        { onChange = \_ -> ToggleSelectedSubReddit subreddit
+        , icon = subredditFilterIcon
+        , checked = Set.member subreddit model.selectedSubreddits
+        , label = labelLeft [] (text subreddit)
+        }
 
 
 dropdownItemName : Over18Filter -> String
@@ -441,7 +455,7 @@ isSavedVisible model savedItem =
     ageAppropriate && inSelectedSubreddit
 
 
-loggedInView : Model -> Html Msg
+loggedInView : Model -> Element Msg
 loggedInView model =
     let
         subreddits =
@@ -451,21 +465,24 @@ loggedInView model =
 
         displayedSaved =
             List.filter (isSavedVisible model) model.saved
+
+        dropdownView =
+            Element.html <|
+                Html.map
+                    Over18Selected
+                    (Dropdown.view
+                        [ OnlyUnder18, IncludeOver18, OnlyOver18 ]
+                        (Just model.over18Selected)
+                        dropdownItemName
+                        model.over18Dropdown
+                    )
     in
-    div []
-        [ div []
-            [ Html.map
-                Over18Selected
-                (Dropdown.view
-                    [ OnlyUnder18, IncludeOver18, OnlyOver18 ]
-                    (Just model.over18Selected)
-                    dropdownItemName
-                    model.over18Dropdown
-                )
-            ]
-        , div []
-            (List.map (subredditFilter model) subreddits)
-        , div []
+    column []
+        [ row []
+            (dropdownView
+                :: List.map (subredditFilter model) subreddits
+            )
+        , row []
             (List.map
                 (savedItemView model)
                 displayedSaved
@@ -483,19 +500,9 @@ view model =
             else
                 model.redditAuthState
                     |> Maybe.map (authLinkView model)
-                    |> Maybe.withDefault (text "")
+                    |> Maybe.withDefault (Element.text "")
     in
-    div
-        []
-        [ img
-            [ Attr.src (model.publicPath ++ "/img/elm.png")
-            , Attr.style "border"
-                "1px solid black"
-            ]
-            []
-        , text "Hello world"
-        , authView
-        ]
+    Element.layout [] authView
 
 
 
