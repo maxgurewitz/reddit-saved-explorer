@@ -478,16 +478,12 @@ loggedInView model =
                     )
     in
     column []
-        [ row []
-            (dropdownView
-                :: List.map (subredditFilter model) subreddits
-            )
-        , row []
-            (List.map
+        (dropdownView
+            :: List.map (subredditFilter model) subreddits
+            ++ List.map
                 (savedItemView model)
                 displayedSaved
-            )
-        ]
+        )
 
 
 view : Model -> Html Msg
