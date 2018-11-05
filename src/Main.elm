@@ -7,6 +7,7 @@ import Dict
 import Dropdown exposing (Dropdown, Event(..))
 import Element exposing (Element, alignRight, centerY, column, el, fill, image, link, padding, row, spacing, text, width)
 import Element.Input exposing (checkbox, labelLeft)
+import Element.Keyed as Keyed
 import Html exposing (Html, a, div, img, input, label)
 import Html.Attributes as Attr
 import Html.Events exposing (onClick)
@@ -477,15 +478,22 @@ loggedInView model =
                         dropdownItemName
                         model.over18Dropdown
                     )
+
+        savedColumn =
+            Keyed.column []
+                (List.map
+                    (\s -> ( s.permalink, savedItemView model s ))
+                    displayedSaved
+                )
+
+        subredditColumn =
+            Keyed.column []
+                (List.map
+                    (\s -> ( s, subredditFilter model s ))
+                    subreddits
+                )
     in
-    column []
-        (dropdownView
-            :: List.map (subredditFilter model) subreddits
-            -- FIXME need to apply keys to prevent images from being reused
-            ++ List.map
-                (savedItemView model)
-                displayedSaved
-        )
+    column [] [ dropdownView, subredditColumn, savedColumn ]
 
 
 view : Model -> Html Msg
