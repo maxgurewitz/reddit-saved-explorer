@@ -408,7 +408,7 @@ subredditFilterIcon isSelected =
             else
                 "glyphicon glyphicon-unchecked"
     in
-    el [ Element.htmlAttribute (Attr.class iconClass) ] (text "")
+    Element.html <| Html.span [ Attr.class iconClass ] []
 
 
 subredditFilter : Model -> String -> Element Msg
@@ -458,6 +458,7 @@ isSavedVisible model savedItem =
 loggedInView : Model -> Element Msg
 loggedInView model =
     let
+        -- FIXME should only display subreddits if they have the correct over 18 status
         subreddits =
             model.saved
                 |> List.map .subreddit
@@ -480,6 +481,7 @@ loggedInView model =
     column []
         (dropdownView
             :: List.map (subredditFilter model) subreddits
+            -- FIXME need to apply keys to prevent images from being reused
             ++ List.map
                 (savedItemView model)
                 displayedSaved
