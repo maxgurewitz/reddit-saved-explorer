@@ -5,7 +5,7 @@ import Base64
 import Browser
 import Dict
 import Dropdown exposing (Dropdown, Event(..))
-import Element exposing (Element, alignRight, centerY, column, el, fill, image, link, padding, row, spacing, text, width)
+import Element exposing (Element, alignLeft, alignTop, centerX, column, el, fill, image, link, padding, row, spacing, text, width)
 import Element.Input exposing (checkbox, labelLeft)
 import Element.Keyed as Keyed
 import Html exposing (Html, a, div, img, input, label)
@@ -456,6 +456,10 @@ isSavedVisible model savedItem =
     ageAppropriate && inSelectedSubreddit
 
 
+paddingStandard =
+    20
+
+
 loggedInView : Model -> Element Msg
 loggedInView model =
     let
@@ -493,7 +497,18 @@ loggedInView model =
                     subreddits
                 )
     in
-    column [] [ dropdownView, subredditColumn, savedColumn ]
+    column [ width fill, centerX ]
+        [ row [ padding paddingStandard ] [ el [] dropdownView ]
+        , row []
+            [ el
+                [ alignTop
+                , alignLeft
+                , padding paddingStandard
+                ]
+                subredditColumn
+            , el [ centerX ] savedColumn
+            ]
+        ]
 
 
 view : Model -> Html Msg
