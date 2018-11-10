@@ -5,7 +5,8 @@ import Base64
 import Browser
 import Dict
 import Dropdown exposing (Dropdown, Event(..))
-import Element exposing (Element, alignLeft, alignTop, centerX, column, el, fill, image, link, padding, row, spacing, text, width)
+import Element exposing (Element, alignLeft, alignTop, centerX, centerY, column, el, fill, height, image, link, padding, row, spacing, text, width)
+import Element.Background as Background
 import Element.Input exposing (checkbox, labelLeft)
 import Element.Keyed as Keyed
 import Html exposing (Html, a, div, img, input, label)
@@ -384,19 +385,59 @@ authLinkView model authState =
         }
 
 
+savedItemHeight =
+    100
+
+
 savedItemView : Model -> SavedItem -> Element Msg
 savedItemView model item =
-    row []
-        [ (if item.over18 then
-            Nothing
+    let
+        maybeThumbnail =
+            if model.over18Selected == OnlyUnder18 && item.over18 then
+                Nothing
 
-           else
-            item.thumbnail
-          )
-            |> Maybe.map (\src -> image [] { src = src, description = item.title })
-            |> Maybe.withDefault (text "")
+            else
+                item.thumbnail
+
+        savedImg =
+            maybeThumbnail
+                |> Maybe.map
+                    (\src ->
+                        image
+                            [ width (fill |> Element.maximum savedItemHeight)
+                            , height (Element.px savedItemHeight)
+                            , centerX
+                            , centerY
+                            ]
+                            { src = src, description = "" }
+                    )
+                |> Maybe.withDefault Element.none
+
+        savedImgWithBackground =
+            el
+                [ height (Element.px savedItemHeight)
+                , width (Element.px savedItemHeight)
+                , Background.color (Element.rgb 0.5 0.5 0.5)
+                ]
+                savedImg
+    in
+    row
+        [ height (Element.px savedItemHeight)
+        ]
+        [ savedImgWithBackground
         , link [] { url = "https://reddit.com" ++ item.permalink, label = text item.title }
         ]
+
+
+
+-- [ -- Element.behindContent
+--     (el
+--         [ Background.color (Element.rgb 0.0 0.0 0.0)
+--         , width (Element.px savedItemHeight)
+--         , height (Element.px savedItemHeight)
+--         ]
+--         Element.none
+--     )
 
 
 subredditFilterIcon : Bool -> Element Msg
