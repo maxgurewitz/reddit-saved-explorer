@@ -425,7 +425,10 @@ savedItemView model item =
         [ height (Element.px savedItemHeight)
         ]
         [ savedImgWithBackground
-        , newTabLink [] { url = "https://reddit.com" ++ item.permalink, label = text item.title }
+        , newTabLink [ width fill ]
+            { url = "https://reddit.com" ++ item.permalink
+            , label = Element.paragraph [] [ text item.title ]
+            }
         ]
 
 
@@ -465,25 +468,27 @@ dropdownItemName filter =
             "Include NSFW."
 
 
+isAgeAppropriate : Over18Filter -> SavedItem -> Bool
+isAgeAppropriate over18Filter savedItem =
+    case over18Filter of
+        OnlyOver18 ->
+            savedItem.over18
+
+        OnlyUnder18 ->
+            not savedItem.over18
+
+        IncludeOver18 ->
+            True
+
+
 isSavedVisible : Model -> SavedItem -> Bool
 isSavedVisible model savedItem =
     let
-        ageAppropriate =
-            case model.over18Selected of
-                OnlyOver18 ->
-                    savedItem.over18
-
-                OnlyUnder18 ->
-                    not savedItem.over18
-
-                IncludeOver18 ->
-                    True
-
         inSelectedSubreddit =
             Set.isEmpty model.selectedSubreddits
                 || Set.member savedItem.subreddit model.selectedSubreddits
     in
-    ageAppropriate && inSelectedSubreddit
+    isAgeAppropriate model.over18Selected savedItem && inSelectedSubreddit
 
 
 paddingStandard =
@@ -497,7 +502,8 @@ loggedInView model =
             List.filter (isSavedVisible model) model.saved
 
         subreddits =
-            displayedSaved
+            model.saved
+                |> List.filter (isAgeAppropriate model.over18Selected)
                 |> List.map .subreddit
                 |> List.Extra.unique
 
@@ -528,14 +534,19 @@ loggedInView model =
     in
     column [ width fill, centerX ]
         [ row [ padding paddingStandard ] [ el [] dropdownView ]
-        , row []
+        , row [ width fill ]
             [ el
                 [ alignTop
                 , alignLeft
                 , padding paddingStandard
+                , width <| Element.fillPortion 1
                 ]
                 subredditColumn
-            , el [ centerX ] savedColumn
+            , el
+                [ centerX
+                , width <| Element.fillPortion 9
+                ]
+                savedColumn
             ]
         ]
 
