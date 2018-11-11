@@ -5,7 +5,7 @@ import Base64
 import Browser
 import Dict
 import Dropdown exposing (Dropdown, Event(..))
-import Element exposing (Element, alignLeft, alignTop, centerX, centerY, column, el, fill, height, image, link, padding, row, spacing, text, width)
+import Element exposing (Element, alignLeft, alignTop, centerX, centerY, column, el, fill, height, image, link, newTabLink, padding, row, spacing, text, width)
 import Element.Background as Background
 import Element.Input exposing (checkbox, labelLeft)
 import Element.Keyed as Keyed
@@ -393,7 +393,7 @@ savedItemView : Model -> SavedItem -> Element Msg
 savedItemView model item =
     let
         maybeThumbnail =
-            if model.over18Selected == OnlyUnder18 && item.over18 then
+            if (model.over18Selected == OnlyUnder18 && item.over18) || item.thumbnail == Just "nsfw" then
                 Nothing
 
             else
@@ -425,19 +425,8 @@ savedItemView model item =
         [ height (Element.px savedItemHeight)
         ]
         [ savedImgWithBackground
-        , link [] { url = "https://reddit.com" ++ item.permalink, label = text item.title }
+        , newTabLink [] { url = "https://reddit.com" ++ item.permalink, label = text item.title }
         ]
-
-
-
--- [ -- Element.behindContent
---     (el
---         [ Background.color (Element.rgb 0.0 0.0 0.0)
---         , width (Element.px savedItemHeight)
---         , height (Element.px savedItemHeight)
---         ]
---         Element.none
---     )
 
 
 subredditFilterIcon : Bool -> Element Msg
@@ -504,14 +493,13 @@ paddingStandard =
 loggedInView : Model -> Element Msg
 loggedInView model =
     let
-        -- FIXME should only display subreddits if they have the correct over 18 status
-        subreddits =
-            model.saved
-                |> List.map .subreddit
-                |> List.Extra.unique
-
         displayedSaved =
             List.filter (isSavedVisible model) model.saved
+
+        subreddits =
+            displayedSaved
+                |> List.map .subreddit
+                |> List.Extra.unique
 
         dropdownView =
             Element.html <|
