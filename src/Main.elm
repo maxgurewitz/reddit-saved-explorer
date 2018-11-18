@@ -425,9 +425,18 @@ savedItemView model item =
         [ height (Element.px savedItemHeight)
         ]
         [ savedImgWithBackground
-        , newTabLink [ width fill ]
+        , newTabLink
+            [ width fill
+            , Element.clip
+            , Element.scrollbarY
+            , height fill
+            ]
             { url = "https://reddit.com" ++ item.permalink
-            , label = Element.paragraph [] [ text item.title ]
+            , label =
+                Element.paragraph
+                    [ Element.paddingXY 10 0
+                    ]
+                    [ text item.title ]
             }
         ]
 
@@ -532,8 +541,8 @@ loggedInView model =
                     subreddits
                 )
     in
-    column [ width fill, centerX ]
-        [ row [ padding paddingStandard ] [ el [] dropdownView ]
+    column [ width fill, centerX, padding paddingStandard ]
+        [ row [] [ el [] dropdownView ]
         , row [ width fill ]
             [ el
                 [ alignTop
